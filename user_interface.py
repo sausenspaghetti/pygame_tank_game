@@ -5,7 +5,8 @@ import pygame
 from pygame import Vector2
 
 from game_state import GameState
-from layer import ArrayLayer, UnitsLayer, Layer, BulletLayer
+from layer import Layer, ArrayLayer, UnitsLayer, \
+    BulletLayer, ExplosionsLayer
 from unit import Unit, Bullet
 from command import MoveCommand, TargetCommand, \
     Command, MoveBulletCommand, ShootCommand, DeleteDestroyedCommand
@@ -33,7 +34,8 @@ class UserInterface:
             ArrayLayer(self, join('images', 'background', 'ground.png'), self.gameState, self.gameState.ground),
             ArrayLayer(self, join('images', 'background', 'walls.png'), self.gameState, self.gameState.walls),
             UnitsLayer(self, join('images', 'units','units.png'), self.gameState, self.gameState.units),
-            BulletLayer(self, join('images', 'explosions', 'explosions.png'), self.gameState, self.gameState.bullets)
+            BulletLayer(self, join('images', 'explosions', 'explosions.png'), self.gameState, self.gameState.bullets),
+            ExplosionsLayer(self, join('images', 'explosions', 'explosions.png'))
         ]
 
         self.commands: list[Command] = []
@@ -42,6 +44,10 @@ class UserInterface:
         self.running = True
         self.clock = pygame.time.Clock()
         self.playerUnit = self.gameState.units[0]   # hack
+        
+        # add gameStateObserver's 
+        for layer in self.layers:
+            self.gameState.registerObserver(layer)
 
 
     @property
@@ -125,7 +131,7 @@ class UserInterface:
 
     def render(self):
         for layer in self.layers:
-            layer.render()
+            layer.render(self.window)
         pygame.display.update()
 
 

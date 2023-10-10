@@ -11,8 +11,15 @@ if TYPE_CHECKING:
     from game_state import GameState
 
 
-class Layer:
+class GameStateObserver:
+    def unitDestroyed(self, unit):
+        pass
+
+
+
+class Layer(GameStateObserver):
     def __init__(self, ui: "UserInterface", imageFile: str):
+        super().__init__()
         self.ui = ui
         self.texture = pygame.image.load(imageFile)
 
@@ -43,8 +50,9 @@ class Layer:
             surface.blit(rotatedTile, spritePos)
         
 
-    def render(self):
+    def render(self, surface: pygame.Surface):
         NotImplemented
+
 
 
 class ArrayLayer(Layer):
@@ -53,12 +61,13 @@ class ArrayLayer(Layer):
         self.array = array
         self.gameState = gameState
 
-    def render(self):
+    def render(self,surface: pygame.Surface):
         for y in range(self.gameState.worldHeight):
             for x in range(self.gameState.worldWidth):
                 tile = self.array[y][x]
                 if tile is not None:
-                    self.renderTile(self.ui.window, Vector2(x, y), tile)
+                    # self.renderTile(self.ui.window, Vector2(x, y), tile)
+                    self.renderTile(surface, Vector2(x, y), tile)
 
 
 
@@ -69,13 +78,15 @@ class UnitsLayer(Layer):
         self.gameState = gameState
 
 
-    def render(self):
+    def render(self, surface: pygame.Surface):
         for unit in self.units:
-            self.renderTile(self.ui.window, unit.position, unit.tile, unit.orientation)
+            # self.renderTile(self.ui.window, unit.position, unit.tile, unit.orientation)
+            self.renderTile(surface, unit.position, unit.tile, unit.orientation)
             target = unit.weaponTarget - unit.position
             angle = math.atan2(-target.x, -target.y) * 180 / math.pi
 
-            self.renderTile(self.ui.window, unit.position, Vector2(0, 6), angle)
+            # self.renderTile(self.ui.window, unit.position, Vector2(0, 6), angle)
+            self.renderTile(surface, unit.position, Vector2(0, 6), angle)
 
 
 class BulletLayer(Layer):
@@ -84,9 +95,35 @@ class BulletLayer(Layer):
         self.bullets = bullets
         self.gameState = gameState
 
-    def render(self):
+    def render(self, surface: pygame.Surface):
         for bullet in self.bullets:
-            self.renderTile(self.ui.window, bullet.position, bullet.tile)
+            # self.renderTile(self.ui.window, bullet.position, bullet.tile)
+            self.renderTile(surface, bullet.position, bullet.tile)
+
+
+class ExplosionsLayer(Layer):
+    def __init__(self, ui: "UserInterface", imageFile: str):
+        super().__init__(ui, imageFile)
+        self.explosions = []
+        self.maxFrameIndex = 27
+
+    def add(self, position: Vector2):
+        self.explosions.append({
+            'position': position,
+            'frameIndex': 0
+        })
+
+    def render(self, surface: pygame.Surface):
+        for explosion in self.explosions:
+            frameIndex = int(explosion['frameIndex'])
+            self.renderTile(surface, explosion['position'], Vector2(frameIndex, 4))
+            explosion['frameIndex'] += 0.5
+
+        self.explosions = [ex for ex in self.explosions if ex['frameIndex'] <= self.maxFrameIndex]
+    
+    def unitDestroyed(self, unit: "Unit"):
+        self.add(unit.position)
+
 
 
     

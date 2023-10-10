@@ -106,6 +106,7 @@ class MoveBulletCommand(Command):
         if not unit is None and self.bullet.unit != unit:
             unit.status = 'destroyed'
             self.bullet.status = 'destroyed'
+            self.state.notifyDestroyed(unit)
             return
         
         self.bullet.position = newPos
@@ -118,9 +119,3 @@ class DeleteDestroyedCommand(Command):
     def run(self):
         self.itemList[:] = [item for item in self.itemList if item.status == 'alive']
         
-
-
-
-
-
-            

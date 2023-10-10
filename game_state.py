@@ -1,11 +1,36 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from pygame import Vector2
 
 from unit import Tank, Tower, Unit
 
+if TYPE_CHECKING:
+    from layer import GameStateObserver
 
-class GameState:
+
+class Notificator:
     def __init__(self):
+        self.observers: list["GameStateObserver"] = []
+
+
+    def registerObserver(self, observer:"GameStateObserver"):
+        self.observers.append(observer)
+
+
+    def unregisterObserver(self, observer: "GameStateObserver"):
+        index = self.observers.index(observer)
+        if index != -1:
+            del self.observers[index]
+        
+    def notifyDestroyed(self, unit: Unit):
+        for observer in self.observers:
+            observer.unitDestroyed(unit)
+
+
+
+
+class GameState(Notificator):
+    def __init__(self):
+        super().__init__()
         
         self.worldSize = Vector2(16, 10)
 
@@ -72,3 +97,6 @@ class GameState:
         for unit in self.units:
             if unit.position == int_pos and unit.status == 'alive':
                 return unit
+
+
+    
