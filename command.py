@@ -5,13 +5,14 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from game_state import GameState
-    from unit import Unit
+    from unit import Unit, GameItem
+
+from unit import Bullet
+
 
 
 class OrientationError(Exception):
     pass
-
-
 
 
 class Command:
@@ -67,3 +68,59 @@ class TargetCommand(Command):
         self.unit.weaponTarget = self.targetVector
 
 
+class ShootCommand(Command):
+    def __init__(self, state: "GameState", unit: "Unit"):
+        self.state = state
+        self.unit = unit
+
+    def run(self):
+        if self.unit.status != 'alive':
+            return
+        if self.state.epoch - self.unit.lastBulletEpoch < self.state.bulletDelay:
+            return
+        self.unit.lastBulletEpoch = self.state.epoch
+        self.state.bullets.append(Bullet(self.state, self.unit))
+
+
+class MoveBulletCommand(Command):
+    def __init__(self, state: "GameState", bullet: "Bullet"):
+        self.state = state
+        self.bullet = bullet
+    
+    def run(self):
+        newPos = self.bullet.position + self.bullet.direction * self.state.bulletSpeed * 0.1
+        newCenterPos = newPos + Vector2(0.5, 0.5)
+
+        # outside the screen
+        if not self.state.inside_world(newPos):
+            self.bullet.status = 'destroyed'
+            return
+
+        # outside the range
+        if newPos.distance_to(self.bullet.startPosition) >= self.state.bulletRange:
+            self.bullet.status = 'destroyed'
+            return
+        
+        # 
+        unit = self.state.findLiveUnit(newCenterPos)
+        if not unit is None and self.bullet.unit != unit:
+            unit.status = 'destroyed'
+            self.bullet.status = 'destroyed'
+            return
+        
+        self.bullet.position = newPos
+
+
+class DeleteDestroyedCommand(Command):
+    def __init__(self, itemList: list["GameItem"]):
+        self.itemList = itemList
+    
+    def run(self):
+        self.itemList[:] = [item for item in self.itemList if item.status == 'alive']
+        
+
+
+
+
+
+            

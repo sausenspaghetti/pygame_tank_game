@@ -5,9 +5,10 @@ import pygame
 from pygame import Vector2
 
 from game_state import GameState
-from layer import ArrayLayer, UnitsLayer, Layer
-from unit import Unit
-from command import MoveCommand, TargetCommand, Command
+from layer import ArrayLayer, UnitsLayer, Layer, BulletLayer
+from unit import Unit, Bullet
+from command import MoveCommand, TargetCommand, \
+    Command, MoveBulletCommand, ShootCommand, DeleteDestroyedCommand
 
 
 os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -31,7 +32,8 @@ class UserInterface:
         self.layers: list[Layer] = [
             ArrayLayer(self, join('images', 'background', 'ground.png'), self.gameState, self.gameState.ground),
             ArrayLayer(self, join('images', 'background', 'walls.png'), self.gameState, self.gameState.walls),
-            UnitsLayer(self, join('images', 'units','units.png'), self.gameState, self.gameState.units)
+            UnitsLayer(self, join('images', 'units','units.png'), self.gameState, self.gameState.units),
+            BulletLayer(self, join('images', 'explosions', 'explosions.png'), self.gameState, self.gameState.bullets)
         ]
 
         self.commands: list[Command] = []
@@ -54,7 +56,7 @@ class UserInterface:
 
     def processInput(self):
         moveVector = Vector2(0, 0)
-
+        mouseClicked = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -68,6 +70,9 @@ class UserInterface:
                     moveVector = Vector2(0, -1)
                 elif event.key == pygame.K_DOWN:
                     moveVector = Vector2(0, 1)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouseClicked = True
+
         
         if not self.running:
             return
@@ -78,16 +83,37 @@ class UserInterface:
         cmd = TargetCommand(self.gameState, self.playerUnit, targetVector)
         self.commands.append(cmd)
 
+        
         # if tank is moving then add MoveCommand
         if moveVector.x != 0 or moveVector.y != 0:
             cmd = MoveCommand(self.gameState, self.playerUnit, moveVector)
             self.commands.append(cmd)
 
+
+        if mouseClicked:
+            self.commands.append(ShootCommand(self.gameState, self.playerUnit))
+
+
         # for all unit except playerUnit add TargetCommand (direction is player)
+        # if playerUnit is in range of attack then add ShootCommand
         for unit in self.gameState.units:
             if unit != self.playerUnit:
                 cmd = TargetCommand(self.gameState, unit, self.playerUnit.position)
                 self.commands.append(cmd)
+                if unit.position.distance_to(self.playerUnit.position) <= self.gameState.bulletRange:
+                    self.commands.append(
+                        ShootCommand(self.gameState, unit)
+                    )
+
+        for bullet in self.gameState.bullets:
+            self.commands.append(MoveBulletCommand(self.gameState, bullet))
+
+        
+        self.commands.append(DeleteDestroyedCommand(self.gameState.bullets))
+        self.commands.append(DeleteDestroyedCommand(self.gameState.units))
+
+        if self.playerUnit.status != 'alive' or len(self.gameState.units) <= 1:
+            self.running = False
         
         
 
@@ -108,7 +134,9 @@ class UserInterface:
             self.processInput()
             self.update()
             self.render()
+            self.gameState.epoch += 1
             self.clock.tick(FPS)
+
         pygame.quit()
 
 

@@ -42,6 +42,12 @@ class GameState:
             [ None, None, None, None, None, None, None, None, None, Vector2(2,3), Vector2(1,1), Vector2(1,1), Vector2(1,1), Vector2(1,1), Vector2(1,1), Vector2(1,1)]
         ] 
 
+        # bullets
+        self.bullets = []
+        self.bulletSpeed = 2
+        self.bulletRange = 5
+        self.bulletDelay = 12
+        self.epoch = 0
 
 
     @property
@@ -57,6 +63,12 @@ class GameState:
         return all([
             pos.x >= 0,
             pos.y >= 0,
-            pos.x < self.worldWidth,
-            pos.y < self.worldHeight,
+            int(pos.x) < self.worldWidth,
+            int(pos.y) < self.worldHeight,
         ])
+    
+    def findLiveUnit(self, pos: Vector2):
+        int_pos = Vector2(int(pos.x), int(pos.y))
+        for unit in self.units:
+            if unit.position == int_pos and unit.status == 'alive':
+                return unit

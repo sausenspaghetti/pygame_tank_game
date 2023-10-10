@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from user_interface import UserInterface
-    from unit import Unit
+    from unit import Unit, Bullet
     from game_state import GameState
 
 
@@ -76,3 +76,18 @@ class UnitsLayer(Layer):
             angle = math.atan2(-target.x, -target.y) * 180 / math.pi
 
             self.renderTile(self.ui.window, unit.position, Vector2(0, 6), angle)
+
+
+class BulletLayer(Layer):
+    def __init__(self, ui: "UserInterface", imageFile: str, gameState: "GameState", bullets: list["Bullet"]):
+        super().__init__(ui, imageFile)
+        self.bullets = bullets
+        self.gameState = gameState
+
+    def render(self):
+        for bullet in self.bullets:
+            self.renderTile(self.ui.window, bullet.position, bullet.tile)
+
+
+    
+    
