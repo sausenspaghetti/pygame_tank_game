@@ -9,7 +9,8 @@ from layer import Layer, ArrayLayer, UnitsLayer, \
     BulletLayer, ExplosionsLayer
 from unit import Unit, Bullet
 from command import MoveCommand, TargetCommand, \
-    Command, MoveBulletCommand, ShootCommand, DeleteDestroyedCommand
+    Command, MoveBulletCommand, ShootCommand,  \
+        DeleteDestroyedCommand, LoadLevelCommand
 
 
 os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -40,6 +41,8 @@ class UserInterface:
 
         self.commands: list[Command] = []
 
+        self.commands.append(LoadLevelCommand(self, join('maps', 'level3.tmx')))
+
         # other staffs
         self.running = True
         self.clock = pygame.time.Clock()
@@ -68,7 +71,9 @@ class UserInterface:
                 self.running = False
                 break
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_ESCAPE:
+                    self.running = False
+                elif event.key == pygame.K_RIGHT:
                     moveVector = Vector2(1, 0)
                 elif event.key == pygame.K_LEFT:
                     moveVector = Vector2(-1, 0)
@@ -130,6 +135,7 @@ class UserInterface:
 
 
     def render(self):
+        self.window.fill('black')
         for layer in self.layers:
             layer.render(self.window)
         pygame.display.update()

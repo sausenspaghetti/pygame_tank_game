@@ -22,6 +22,7 @@ class Layer(GameStateObserver):
         super().__init__()
         self.ui = ui
         self.texture = pygame.image.load(imageFile)
+        self.imageFile = imageFile
 
     def renderTile(self, surface: pygame.Surface, position: Vector2, tile: Vector2, angle=None):
         spritePos = position.elementwise() * self.ui.cellSize
@@ -53,6 +54,12 @@ class Layer(GameStateObserver):
     def render(self, surface: pygame.Surface):
         NotImplemented
 
+    
+    def setTileset(self, cellSize, imageFile):
+        self.texture = pygame.image.load(imageFile)
+        self.imageFile = imageFile
+
+
 
 
 class ArrayLayer(Layer):
@@ -68,6 +75,8 @@ class ArrayLayer(Layer):
                 if tile is not None:
                     # self.renderTile(self.ui.window, Vector2(x, y), tile)
                     self.renderTile(surface, Vector2(x, y), tile)
+
+    
 
 
 
